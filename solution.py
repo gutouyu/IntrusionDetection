@@ -37,7 +37,7 @@ dataForDDosTest = dataTest.loc[(dataTest.classes == 'smurf.') |
 def preprcoessDataTcpBaseFeature(data):
     duration_mat = data['duration'].as_matrix().reshape(1, -1)
     scaler = StandardScaler().fit(duration_mat)
-    data['dur_std'] = scaler.transform(data['duration'])
+    data['dur_std'] = scaler.transform(duration_mat)
     dummies_protocol_type = pd.get_dummies(data['protocol_type'], prefix='protocol_type')
 
     scaler2 = StandardScaler().fit(data['src_bytes'])
