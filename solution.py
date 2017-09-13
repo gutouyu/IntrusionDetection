@@ -5,7 +5,7 @@ import tensorflow as tf
 from sklearn.preprocessing import StandardScaler
 
 HIIDEN_LAYER_CEIL_NUM = 800
-LEARN_RATE = 0.00001
+LEARN_RATE = 0.000001
 # LEARN_RATE = 0.001
 DROP = 0.5
 TRAIN_STEP = 10000
@@ -38,12 +38,17 @@ def preprcoessDataTcpBaseFeature(data):
     duration_mat = data['duration'].as_matrix().reshape(1, -1)
     scaler = StandardScaler().fit(duration_mat)
     data['dur_std'] = scaler.transform(duration_mat).reshape(-1)
+
     dummies_protocol_type = pd.get_dummies(data['protocol_type'], prefix='protocol_type')
 
-    scaler2 = StandardScaler().fit(data['src_bytes'])
-    data['src_bytes_std'] = scaler2.transform(data['src_bytes'])
-    scaler3 = StandardScaler().fit(data['dst_bytes'])
-    data['dst_bytes_std'] = scaler3.transform(data['dst_bytes'])
+    src_bytes_mat = data['src_bytes'].as_matrix().reshape(1, -1)
+    scaler2 = StandardScaler().fit(src_bytes_mat)
+    data['src_bytes_std'] = scaler2.transform(src_bytes_mat).reshape(-1)
+
+    dst_bytes_mat = data['dst_bytes'].as_matrix().reshape(1, -1)
+    scaler3 = StandardScaler().fit(dst_bytes_mat)
+    data['dst_bytes_std'] = scaler3.transform(dst_bytes_mat).reshape(-1)
+
     data.drop(['duration', 'src_bytes', 'dst_bytes', 'service'], axis=1, inplace=True)
 
     ### preprocessing the  continuous data (std---z-zero) 连续数据 标准化
@@ -120,11 +125,13 @@ def preprocessDataTimeForDataFlow(data):
 
 
 def preprocessDataTimeForServer(data):
-    scaler6 = StandardScaler().fit(data['dst_host_count'])
-    data['dst_host_count_std'] = scaler6.transform(data['dst_host_count'])
+    dst_host_count_mat = data['dst_host_count'].as_matrix().reshape(1, -1)
+    scaler6 = StandardScaler().fit(dst_host_count_mat)
+    data['dst_host_count_std'] = scaler6.transform(dst_host_count_mat).reshape(-1)
 
-    scaler7 = StandardScaler().fit(data['dst_host_srv_count'])
-    data['dst_host_srv_count_std'] = scaler7.transform(data['dst_host_srv_count'])
+    dst_host_srv_count_mat = data['dst_host_srv_count'].as_matrix().reshape(1, -1)
+    scaler7 = StandardScaler().fit(dst_host_srv_count_mat)
+    data['dst_host_srv_count_std'] = scaler7.transform(dst_host_srv_count_mat).reshape(-1)
 
     data.drop(['dst_host_count', 'dst_host_srv_count'], axis=1, inplace=True)
 
