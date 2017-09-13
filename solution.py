@@ -5,7 +5,7 @@ import tensorflow as tf
 from sklearn.preprocessing import StandardScaler
 
 HIIDEN_LAYER_CEIL_NUM = 800
-LEARN_RATE = 0.000001
+LEARN_RATE = 0.00001
 # LEARN_RATE = 0.001
 DROP = 0.5
 TRAIN_STEP = 10000
@@ -35,7 +35,8 @@ dataForDDosTest = dataTest.loc[(dataTest.classes == 'smurf.') |
 ### get the ddos attack data
 
 def preprcoessDataTcpBaseFeature(data):
-    scaler = StandardScaler().fit(data['duration'])
+    duration_mat = data['duration'].as_matrix().reshape(1, -1)
+    scaler = StandardScaler().fit(duration_mat)
     data['dur_std'] = scaler.transform(data['duration'])
     dummies_protocol_type = pd.get_dummies(data['protocol_type'], prefix='protocol_type')
 
