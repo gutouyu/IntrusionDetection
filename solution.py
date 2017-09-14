@@ -4,8 +4,8 @@ import pandas as pd
 import tensorflow as tf
 from sklearn.preprocessing import StandardScaler
 
-HIIDEN_LAYER_CEIL_NUM = 800
-LEARN_RATE = 0.000001
+HIIDEN_LAYER_ONE_CEIL_NUM = 800
+LEARN_RATE = 0.00001
 # LEARN_RATE = 0.001
 DROP = 0.5
 TRAIN_STEP = 10000
@@ -258,16 +258,17 @@ label_count = np.shape(train_y)[1]
 x = tf.placeholder('float32', shape=[None, 64])
 y = tf.placeholder('float32', shape=[None, label_count])
 ## x [batchSize,64],y [batchSize,64]
-w_input_hidden = weightMat([feature_num, HIIDEN_LAYER_CEIL_NUM])
+w_input_hidden = weightMat([feature_num, HIIDEN_LAYER_ONE_CEIL_NUM])
 ## [64,512]
-b_input_hiiden = biasMat([HIIDEN_LAYER_CEIL_NUM])
+b_input_hiiden = biasMat([HIIDEN_LAYER_ONE_CEIL_NUM])
 ##  [512]
 hidden_layer = tf.nn.relu(tf.matmul(x, w_input_hidden) + b_input_hiiden)
 
 hidden_layer_dropout = tf.nn.dropout(hidden_layer, keep_prob=DROP)
 ## dropout 0.5
 
-w_hiden_output = weightMat([HIIDEN_LAYER_CEIL_NUM, label_count])
+
+w_hiden_output = weightMat([HIIDEN_LAYER_ONE_CEIL_NUM, label_count])
 ## [512,10]
 b_hidden_output = biasMat([label_count])
 ## [512]
