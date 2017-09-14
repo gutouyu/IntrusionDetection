@@ -4,7 +4,8 @@ import pandas as pd
 import tensorflow as tf
 from sklearn.preprocessing import StandardScaler
 
-HIIDEN_LAYER_ONE_CEIL_NUM = 800
+HIIDEN_LAYER_ONE_CEIL_NUM = 512
+HIIDEN_LAYER_TWO_CEIL_NUM = 256
 LEARN_RATE = 0.00001
 # LEARN_RATE = 0.001
 DROP = 0.5
@@ -258,35 +259,55 @@ label_count = np.shape(train_y)[1]
 x = tf.placeholder('float32', shape=[None, 64])
 y = tf.placeholder('float32', shape=[None, label_count])
 ## x [batchSize,64],y [batchSize,64]
-w_input_hidden = weightMat([feature_num, HIIDEN_LAYER_ONE_CEIL_NUM])
+w_input_hidden_one = weightMat([feature_num, HIIDEN_LAYER_ONE_CEIL_NUM])
 ## [64,512]
-b_input_hiiden = biasMat([HIIDEN_LAYER_ONE_CEIL_NUM])
+b_input_hiiden_one = biasMat([HIIDEN_LAYER_ONE_CEIL_NUM])
 ##  [512]
-hidden_layer = tf.nn.relu(tf.matmul(x, w_input_hidden) + b_input_hiiden)
+hidden_layer_one = tf.nn.relu(tf.matmul(x, w_input_hidden_one) + b_input_hiiden_one)
 
-hidden_layer_dropout = tf.nn.dropout(hidden_layer, keep_prob=DROP)
-## dropout 0.5
+hidden_layer_one_dropout = tf.nn.dropout(hidden_layer_one, keep_prob=DROP)
+## dropout 0.5 [batchSize,512]
 
 
-w_hiden_output = weightMat([HIIDEN_LAYER_ONE_CEIL_NUM, label_count])
-## [512,10]
-b_hidden_output = biasMat([label_count])
-## [512]
-y_output = tf.matmul(hidden_layer_dropout, w_hiden_output) + b_hidden_output
+w_hidden_one_hidden_two = weightMat([HIIDEN_LAYER_ONE_CEIL_NUM, HIIDEN_LAYER_TWO_CEIL_NUM])
+## [512,256]
+
+b_hidden_one_hidden_two = biasMat([HIIDEN_LAYER_TWO_CEIL_NUM])
+## [256]
+
+hidden_layer_two = tf.nn.relu(tf.matmul(hidden_layer_one_dropout, w_hidden_one_hidden_two) + b_hidden_one_hidden_two)
+hidden_layer_two_dropout = tf.nn.dropout(hidden_layer_two, keep_prob=DROP)
+
+## dropout 0.5 [batchsize,256]
+
+w_hidden_two_output = weightMat([HIIDEN_LAYER_TWO_CEIL_NUM, label_count])
+## [256,10]
+b_hidden_two_output = biasMat([label_count])
+## [10]
+
+y_output = tf.matmul(hidden_layer_two_dropout, w_hidden_two_output) + b_hidden_two_output
+## [10]
 y_ = tf.nn.softmax(y_output)
+## [10]
 
 loss_function = tf.reduce_mean(-tf.reduce_sum(y * tf.log(tf.clip_by_value(y_, 1e-8, 1.0))))
-l2Loss = tf.nn.l2_loss(w_hiden_output) + tf.nn.l2_loss(w_input_hidden)
+l2Loss = tf.nn.l2_loss(w_hidden_two_output) + tf.nn.l2_loss(w_input_hidden_one) + tf.nn.l2_loss(w_hidden_one_hidden_two)
 loss = loss_function + L2_RATE * l2Loss
 trainer = tf.train.GradientDescentOptimizer(LEARN_RATE).minimize(loss)
 
-## define bp-ANN network and [batchSize,64]->[batchSize,512]->[batchSize,7] 训练模型
+## define bp-ANN network and [batchSize,64]->[batchSize,512]->[batchSize,256]->[batchSize,7] 训练模型
 
 
 x_in = tf.placeholder('float32', shape=[None, 64])
 
-hidden_layer_testData = tf.nn.relu(tf.matmul(x_in, w_input_hidden) + b_input_hiiden)
-prediction_Data = tf.nn.softmax(tf.matmul(hidden_layer_testData, w_hiden_output) + b_hidden_output)
+hidden_layer_one_testData = tf.nn.relu(tf.matmul(x_in, w_input_hidden_one) + b_input_hiiden_one)
+## [batchSize,512]
+hidden_layout_two_testData = tf.nn.relu(
+    tf.matmul(hidden_layer_one_testData, w_hidden_one_hidden_two) + b_hidden_one_hidden_two)
+
+## [batchSize,256]
+
+prediction_Data = tf.nn.softmax(tf.matmul(hidden_layout_two_testData, w_hidden_two_output) + b_hidden_two_output)
 
 train_index_start = total_train_num
 
