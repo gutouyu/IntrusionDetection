@@ -4,15 +4,15 @@ import pandas as pd
 import tensorflow as tf
 from sklearn.preprocessing import StandardScaler
 
-HIIDEN_LAYER_ONE_CEIL_NUM = 512
-HIIDEN_LAYER_TWO_CEIL_NUM = 256
-LEARN_RATE = 0.00001
+HIIDEN_LAYER_ONE_CEIL_NUM = 256
+HIIDEN_LAYER_TWO_CEIL_NUM = 150
+LEARN_RATE = 0.000005
 # LEARN_RATE = 0.001
 DROP = 0.5
-TRAIN_STEP = 10000
+TRAIN_STEP = 30000
 VALIDATION_RATE = 0.25
 BATCH_SIZE = 200
-L2_RATE = 0.01
+L2_RATE = 0.1
 
 data = pd.read_csv('./kddcup.data_10_percent.csv')
 dataTest = pd.read_csv('./corrected.csv')
