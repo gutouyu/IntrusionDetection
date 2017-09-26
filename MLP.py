@@ -56,6 +56,7 @@ class MLP(object):
 		self.loss_history = []
 		self.train_acc_history = []
 		self.val_acc_history = []
+		self.test_acc_history = []
 		self.params = {}
 
 	def _initGraph(self):
@@ -70,11 +71,13 @@ class MLP(object):
 		# Add hidden layers
 		layer_dim = np.hstack([self.input_dim, self.hidden_dim])
 		output = Xs
+		l2_loss = 0.0
 		for idx in xrange(len(layer_dim) - 1):
 			W = tf.Variable(tf.random_normal([layer_dim[idx], layer_dim[idx+1]]) * self.weight_scale, dtype=tf.float32)
 			b = tf.Variable(tf.zeros(layer_dim[idx+1]), dtype=tf.float32)
 			output = tf.add(tf.matmul(output, W), b)
 			output = tf.nn.relu(output)
+			l2_loss += tf.nn.l2_loss(W)
 			if self.dropout_prob != 0:
 				output = tf.nn.dropout(output, self.dropout_prob)
 				print ('dropout')
@@ -83,9 +86,11 @@ class MLP(object):
 		W = tf.Variable(tf.random_normal([layer_dim[-1], self.output_dim]) * self.weight_scale, dtype=tf.float32)
 		b = tf.Variable(tf.zeros(self.output_dim), dtype=tf.float32)
 		logits = tf.add(tf.matmul(output, W), b)
+		l2_loss += tf.nn.l2_loss(W)
 
 		# Loss
 		loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=logits, labels=ys))
+		loss += self.l2_strength * l2_loss
 
 		# Train
 		train_step = tf.train.GradientDescentOptimizer(self.learning_rate).minimize(loss)
@@ -124,12 +129,13 @@ class MLP(object):
 
 			# Minibatch 
 			# Method 1
-			# batch_mask = np.random.choice(num_trains, self.batch_size)
-			# X_batch = self.data['X_train'][batch_mask]
-			# y_batch = self.data['y_train'][batch_mask]
-			offset = (t * self.batch_size) % (num_trains - self.batch_size)
-			X_batch = self.data['X_train'][offset:(offset + self.batch_size), :]
-			y_batch = self.data['y_train'][offset:(offset + self.batch_size), :]
+			batch_mask = np.random.choice(num_trains, self.batch_size)
+			X_batch = self.data['X_train'][batch_mask]
+			y_batch = self.data['y_train'][batch_mask]
+
+			# offset = (t * self.batch_size) % (num_trains - self.batch_size)
+			# X_batch = self.data['X_train'][offset:(offset + self.batch_size), :]
+			# y_batch = self.data['y_train'][offset:(offset + self.batch_size), :]
 
 			# Train
 			_,l = sess.run([train_step, loss], feed_dict={ Xs:X_batch, ys: y_batch })
@@ -142,10 +148,21 @@ class MLP(object):
 				val_acc = sess.run(accuracy, feed_dict={Xs: self.data['X_val'], ys: self.data['y_val']})
 				self.train_acc_history.append(train_acc)
 				self.val_acc_history.append(val_acc)
-				print('(Iteration %d / %d) train acc: %.2f%%; val_acc: %.2f%%' % (t, num_iterations, train_acc*100, val_acc*100))
-	
-	def predict(self, X, y):
-		accuracy, Xs, ys = self.params['accuracy'], self.params['Xs'], self.params['ys']
-		#return self.session.run(prediction, feed_dict={Xs:X, ys:np.ones((X.shape[0], self.output_dim))})
-		return self.session.run(accuracy, feed_dict={Xs:X, ys:y})
+				if 'X_test' in self.data.keys():
+					test_acc = sess.run(accuracy, feed_dict={Xs: self.data['X_test'], ys:self.data['y_test']})
+					self.test_acc_history.append(test_acc)
+					print('(Iteration %d / %d) train acc: %.2f%%; val_acc: %.2f%%; test_acc: %.2f%%' % (t, num_iterations, train_acc*100, val_acc*100, test_acc*100))
+				else:
+					print('(Iteration %d / %d) train acc: %.2f%%; val_acc: %.2f%%' % (t, num_iterations, train_acc*100, val_acc*100))
+
+
+	def predict(self, X, y=None):
+		"""
+		If y is None, return score predictions, else return accuracy.
+		"""
+		accuracy,prediction, Xs, ys = self.params['accuracy'], self.params['prediction'], self.params['Xs'], self.params['ys']
+		if y == None:
+			return self.session.run(prediction, feed_dict={Xs:X, ys:np.ones((X.shape[0], self.output_dim))})
+		else:
+			return self.session.run(accuracy, feed_dict={Xs:X, ys:y})
 
