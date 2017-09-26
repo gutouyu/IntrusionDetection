@@ -77,6 +77,7 @@ class MLP(object):
 			output = tf.nn.relu(output)
 			if self.dropout_prob != 0:
 				output = tf.nn.dropout(output, self.dropout_prob)
+				print ('dropout')
 
 		# Add output layers
 		W = tf.Variable(tf.random_normal([layer_dim[-1], self.output_dim]) * self.weight_scale, dtype=tf.float32)
@@ -143,6 +144,8 @@ class MLP(object):
 				self.val_acc_history.append(val_acc)
 				print('(Iteration %d / %d) train acc: %.2f%%; val_acc: %.2f%%' % (t, num_iterations, train_acc*100, val_acc*100))
 	
-	def predict(self, X):
-		return self.session.run(prediction, feed_dict={Xs:X, ys:None})
+	def predict(self, X, y):
+		accuracy, Xs, ys = self.params['accuracy'], self.params['Xs'], self.params['ys']
+		#return self.session.run(prediction, feed_dict={Xs:X, ys:np.ones((X.shape[0], self.output_dim))})
+		return self.session.run(accuracy, feed_dict={Xs:X, ys:y})
 
