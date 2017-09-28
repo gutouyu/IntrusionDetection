@@ -18,8 +18,6 @@ plt.rcParams['image.interpolation'] = 'nearest'
 plt.rcParams['image.cmap'] = 'gray'
 # get_ipython().magic(u'load_ext autoreload')
 # get_ipython().magic(u'autoreload 2')
-import os
-os.environ['TF_CPP_MIN_LOG_LEVEL']='2'
 
 def read_data():
     input_file_dir = "../datasets"

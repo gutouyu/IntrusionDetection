@@ -1,9 +1,9 @@
 #encoding=utf-8
 
-import tensorflow as tf
+import os
 import numpy as np
-
-
+import tensorflow as tf
+os.environ['TF_CPP_MIN_LOG_LEVEL']='2'
 
 class MLP(object):
 	"""
@@ -140,9 +140,10 @@ class MLP(object):
 			# Train
 			_,l = sess.run([train_step, loss], feed_dict={ Xs:X_batch, ys: y_batch })
 
-			# Record
+			# Record Loss every train step
 			self.loss_history.append(l)
-			# TODO: 优化这部分代码，还没想好怎么打印 epoch还没用
+
+			# Record Accuracy every {print_every} iterations
 			if self.verbose and (t % self.print_every == 0):
 				train_acc = sess.run(accuracy, feed_dict={Xs:X_batch, ys:y_batch })
 				val_acc = sess.run(accuracy, feed_dict={Xs: self.data['X_val'], ys: self.data['y_val']})
@@ -154,6 +155,17 @@ class MLP(object):
 					print('(Iteration %d / %d) train acc: %.2f%%; val_acc: %.2f%%; test_acc: %.2f%%' % (t, num_iterations, train_acc*100, val_acc*100, test_acc*100))
 				else:
 					print('(Iteration %d / %d) train acc: %.2f%%; val_acc: %.2f%%' % (t, num_iterations, train_acc*100, val_acc*100))
+
+			# epoch每次结束的时候都重新打散数据 + TODO: maybe also lr decay
+			epoch_end = ((t + 1) % iterations_per_epoch == 0)
+			if epoch_end:
+				indexMask = np.arange(len(self.data['X_train']))
+				for i in xrange(10):
+					np.random.shuffle(indexMask)
+				self.data['X_train'] = self.data['X_train'][indexMask]
+				self.data['y_train'] = self.data['y_train'][indexMask]
+				self.num_epochs = self.num_epochs + 1
+
 
 
 	def predict(self, X, y=None):
